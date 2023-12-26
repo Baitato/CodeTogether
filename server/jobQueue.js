@@ -1,20 +1,17 @@
 const Queue = require("bull");
 const moment = require("moment");
 const Job = require("./models/Job");
-const { executeCpp } = require("./executeCpp");
-const { dockerCpp } = require("./dockerCpp");
-const { executePy } = require("./executePy");
-const { executeJava } = require("./executeJava");
+const path = require("path")
+const { dockerExec } = require("./dockerCpp");
 const Problem = require("./models/Problem");
+const dirAllCodes = path.join(__dirname, "codes");
+const fs = require("fs")
 
-// For running code with sample user input
-
-const executor_map = {
-  c: executeCpp,
-  cpp: dockerCpp,
-  py: executePy,
-  java: executeJava,
-};
+function writeTestCasetoInputFile(jobId, text)
+{
+  const filePath = path.join(dirAllCodes,jobId,"input.txt")
+  fs.writeFileSync(filePath,text)
+}
 
 const jobQueue = new Queue("job-runner-queue", {
   redis: { host: "127.0.0.1", port: 6380 },
@@ -39,14 +36,13 @@ jobQueue.process(async function ({data}, done) {
   //   output = executeCpp(job.filepath, job.userInput);
   // else output = await executePy(job.filepath, job.userInput);
 
-  const execute = executor_map[job.language];
-  const result = execute(jobId);
+  const result = dockerExec(jobId,job.language);
   
   console.log(result)
   job["completedAt"] = new Date();
   job["status"] = result.status;
   job["output"] = result.output;
-  job["verdict"] = result.verdict //accepted by default in case of run
+
   await job.save();
 
   return true;
@@ -67,71 +63,73 @@ const addJobToQueue = async (jobId) => {
 // For submitting code and check testcase
 
 const submitQueue = new Queue("job-submit-queue", {
-  redis: { host: "redis", port: 6379 },
+  redis: { host: "redis", port: 6380 },
 });
 
 submitQueue.process(async ({ data }) => {
-  // const jobId = data.id;
-  // const problemId = data.problemId;
-  // const job = await Job.findById(jobId);
-  // const problem = await Problem.findById(problemId);
+  const jobId = data.id;
+  const problemId = data.problemId;
+  const job = await Job.findById(jobId);
+  const problem = await Problem.findById(problemId);
 
-  // if (job === undefined || problem === undefined) {
-  //   throw Error(`Invalid job/problem id`);
-  // }
+  if (job === undefined || problem === undefined) {
+    throw Error(`Invalid job/problem id`);
+  }
 
-  // const testcases = problem.testcase;
+  const testcases = problem.testcase;
 
-  // try {
-  //   let output;
-  //   job["startedAt"] = new Date();
-  //   job["userId"] = data.userId;
-  //   job["problemId"] = problemId;
+  let output;
+  job["startedAt"] = new Date();
+  job["userId"] = data.userId;
+  job["problemId"] = problemId;
 
-  //   let passed = true;
+  let passed = true;
 
-  //   for (let i = 0; i < testcases.length; i++) {
-  //     const execute = executor_map[job.language];
-  //     const result = execute(job.filepath, testcases[i].input);
+  for (let i = 0; i < testcases.length; i++) {
 
-  //     let outputActual = result?.output?.trim();
-  //     let outputExpected = testcases[i].output.trim();
+    writeTestCasetoInputFile(jobId, testcases[i].input)
 
-  //     if (result.status !== 0 || outputActual !== outputExpected) {
-  //       if (result.code === "ETIMEDOUT")
-  //         job.verdict = `Time limit exceeded in testcase ${i + 1}`;
-  //       else
-  //         job.verdict = `Process exited with code ${
-  //           result.status
-  //         } for testcase ${i + 1}`;
-  //       passed = false;
-  //       break;
-  //     }
-  //   }
+    const result = dockerExec(jobId, job.language);
+    
+    const outputActual = result.output
 
-  //   passed && (job["verdict"] = "Accepted");
-  //   // !passed && job["verdict"] !== "tle" && (job["verdict"] = "wa");
+    if (result.status !== "success" || outputActual !== outputExpected) {
+      if(result.status == "success")
+      {
+        job.verdict = `WA for testcase ${i + 1}`;
+      }
+      if (result.status === "Timeout")
+      {
+        job.verdict = `Time limit exceeded in testcase ${i + 1}`;
+      }
+      else if(result.status =="compileTimeError")
+      {
+        job.verdict = `Compilation Error`;
+        passed = false;
+      }
+      else if(result.status =="runtimeError")
+      {
+        job.verdict = `Runtime error for testcase ${i + 1}`;
+        passed = false;
+      }
+      break;
+    }
+  }
 
-  //   if (passed) {
-  //     const distinct_user = new Set(problem.whoSolved);
-  //     distinct_user.add(data.userId);
-  //     problem.whoSolved = [...distinct_user];
-  //     await problem.save();
-  //   }
+  passed && (job["verdict"] = "Accepted");
 
-  //   job["completedAt"] = new Date();
-  //   job["status"] = "success";
-  //   job["output"] = output;
-  //   await job.save();
+  if (passed) {
+    const distinct_user = new Set(problem.whoSolved);
+    distinct_user.add(data.userId);
+    problem.whoSolved = [...distinct_user];
+    await problem.save();
+  }
 
-  //   return true;
-  // } catch (err) {
-  //   job["completedAt"] = new Date();
-  //   job["status"] = "error";
-  //   job["output"] = err;
-  //   await job.save();
-  //   throw Error(err);
-  // }
+  job["completedAt"] = new Date();
+  job["status"] = "success";
+  job["output"] = output;
+  await job.save();
+
 });
 
 submitQueue.on("failed", (error) => {
@@ -139,11 +137,11 @@ submitQueue.on("failed", (error) => {
 });
 
 const addSubmitToQueue = async (jobId, problemId, userId) => {
-  // submitQueue.add({
-  //   id: jobId,
-  //   problemId,
-  //   userId,
-  // });
+  submitQueue.add({
+    id: jobId,
+    problemId,
+    userId,
+  });
 };
 
 module.exports = {

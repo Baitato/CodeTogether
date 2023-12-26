@@ -2,7 +2,7 @@ import { Modal, useModal, Button, Checkbox } from "@nextui-org/react";
 import MDEditor from "@uiw/react-md-editor";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import rehypeSanitize from "rehype-sanitize";
+// import rehypeSanitize from "rehype-sanitize";
 import { addTestcase } from "../store/ProblemSlice";
 import { RootState } from "../store/store";
 
@@ -71,7 +71,7 @@ export default function TestcaseModal() {
                   setValue({ ...value, explanation: e as string })
                 }
                 previewOptions={{
-                  rehypePlugins: [[rehypeSanitize]],
+                  rehypePlugins: [],
                 }}
                 preview="edit"
               />

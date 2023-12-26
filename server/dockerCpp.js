@@ -8,7 +8,7 @@ if (!fs.existsSync(dirAllCodes)) {
   fs.mkdirSync(dirAllCodes, { recursive: true });
 }
 
-const dockerCpp = (jobId) => {
+const dockerExec = (jobId, language) => {
   
   
   const jobPath = path.join(dirAllCodes, `${jobId}`);
@@ -21,7 +21,18 @@ const dockerCpp = (jobId) => {
     //   `g++ ${filepath} -o ${outPath} && cd ${outputPath} && ./${jobId}.out`,
     //   { input: userInput, timeout: 7000 }
   console.log("Docker Command running now " + jobPath)
-  execSync(`docker run --rm -v "${jobPath}:/usr/src/app" --cpus="1" --memory="100m" cppexec`) 
+  if(language == "cpp" || language == "c")
+  {
+    execSync(`docker run --rm -v "${jobPath}:/usr/src/app" --cpus="1" --memory="100m" cppexec`) 
+  }else if(language == "java")
+  {
+    execSync(`docker run --rm -v "${jobPath}:/usr/src/app" --cpus="1" --memory="100m" javaexec`) 
+  }
+  else if(language == "py")
+  {
+    execSync(`docker run --rm -v "${jobPath}:/usr/src/app" --cpus="1" --memory="100m" pyexec`) 
+  }
+
 
   const runTimeError = fs.readFileSync(path.join(jobPath,"runtime_status.txt"), "utf8");
   const compileTimeError = fs.readFileSync(path.join(jobPath,"compile_status.txt"), "utf8");
@@ -29,20 +40,22 @@ const dockerCpp = (jobId) => {
 
   let status = "success"
   let output = ""
-  let verdict = "Accepted"
+  
+
+
   if(compileTimeError !== "")
   {
     output = compileTimeError
-    verdict = "compileTimeError"
+    status = "compileTimeError"
   }
   else if(runTimeError == "Timeout")
   {
     output = runTimeError
-    verdict = "tle"
+    status = "tle"
   }
   else if(runTimeError != "")
   {
-    verdict = "Runtime Error"
+    status = "runtimeError"
     output = runTimeError
   } else {
     output = codeOutput
@@ -51,10 +64,9 @@ const dockerCpp = (jobId) => {
   return {
     status: status,
     output: output,
-    verdict: verdict
   };
 };
 
 module.exports = {
-  dockerCpp,
+  dockerExec,
 };

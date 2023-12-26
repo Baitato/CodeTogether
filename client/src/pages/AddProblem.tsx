@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
-import rehypeSanitize from "rehype-sanitize";
+// import rehypeSanitize from "rehype-sanitize";
 import TestcaseContainer from "../components/TestcaseContainer";
 import TestcaseModal from "../components/TestcaseModal";
 import {
@@ -167,7 +167,7 @@ export default function AddProblem() {
                   setProblemDetail({ ...problemDetail, input: e as string })
                 }
                 previewOptions={{
-                  rehypePlugins: [[rehypeSanitize]],
+                  rehypePlugins: [],
                 }}
                 preview="edit"
               />
@@ -182,7 +182,7 @@ export default function AddProblem() {
                   setProblemDetail({ ...problemDetail, output: e as string })
                 }
                 previewOptions={{
-                  rehypePlugins: [[rehypeSanitize]],
+                  rehypePlugins: [],
                 }}
                 preview="edit"
               />
@@ -200,7 +200,7 @@ export default function AddProblem() {
                   })
                 }
                 previewOptions={{
-                  rehypePlugins: [[rehypeSanitize]],
+                  rehypePlugins: [],
                 }}
                 preview="edit"
               />
