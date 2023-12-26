@@ -1,12 +1,12 @@
 const Job = require("../models/Job");
 const router = require("express").Router();
 const { addJobToQueue, addSubmitToQueue } = require("../jobQueue");
-const { generateFile } = require("../generateFile");
+const { generateFiles } = require("../generateFile");
 const verify = require("../middleware/verify");
 const fs = require("fs");
 const http = require("http");
 const path = require("path");
-
+const { v4: uuid } = require("uuid");
 // Code Related Route
 
 router.post("/run", async (req, res) => {
@@ -16,13 +16,18 @@ router.post("/run", async (req, res) => {
     return res.status(400).json({ success: false, error: "Empty code body!" });
   }
 
+    // console.log(userInput);
+    // console.log(language)
+    // console.log(code);
+    // res.status(200).send("run endpoint")
   let job;
   try {
-    // need to generate a c++ file with content from the request
-    const filepath = await generateFile(language, code);
-
-    job = await Job({ language, filepath, userInput }).save();
-    const jobId = job["_id"];
+    // need to generate a c++ file,compile_status,runtime status files
+    job = await Job({ language, userInput }).save();
+    const jobId = job._id;
+    console.log("Run Endpoint")
+    console.log(job)
+    generateFiles(language, code, userInput, jobId)
     addJobToQueue(jobId);
 
     res.status(201).json({ sueccess: true, jobId });

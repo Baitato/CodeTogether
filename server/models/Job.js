@@ -8,7 +8,6 @@ const JobSchema = new mongoose.Schema({
   },
   filepath: {
     type: String,
-    required: true,
   },
   submittedAt: {
     type: Date,

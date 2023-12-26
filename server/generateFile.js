@@ -2,20 +2,35 @@ const fs = require("fs");
 const path = require("path");
 const { v4: uuid } = require("uuid");
 
-const dirCodes = path.join(__dirname, "codes");
+const dirAllCodes = path.join(__dirname, "codes");
 
-if (!fs.existsSync(dirCodes)) {
-  fs.mkdirSync(dirCodes, { recursive: true });
+if (!fs.existsSync(dirAllCodes)) {
+  fs.mkdirSync(dirAllCodes, { recursive: true });
 }
 
-const generateFile = async (format, content) => {
-  const jobId = format === "java" ? "Main" : uuid();
-  const filename = `${jobId}.${format}`;
-  const filepath = path.join(dirCodes, filename);
-  await fs.writeFileSync(filepath, content);
-  return filepath;
+const generateFiles = async (format, content, input, jobId) => {
+  
+  
+  const dirJobIdPath = path.join(dirAllCodes,jobId.toString())
+  
+  const filename = `Main.${format}`;
+  
+  const codePath = path.join(dirJobIdPath, filename);
+  const outputPath = path.join(dirJobIdPath, "output.txt");
+  const runtimePath = path.join(dirJobIdPath, "runtime_status.txt");
+  const compileStatusPath = path.join(dirJobIdPath, "compile_status.txt");
+  const inputPath = path.join(dirJobIdPath, "input.txt");
+
+  fs.mkdirSync(dirJobIdPath)
+  fs.writeFileSync(codePath, content);
+  fs.writeFileSync(runtimePath, "");
+  fs.writeFileSync(outputPath, "");
+  fs.writeFileSync(compileStatusPath, "");
+  fs.writeFileSync(inputPath, input);
+
+  // return jobId;
 };
 
 module.exports = {
-  generateFile,
+  generateFiles,
 };

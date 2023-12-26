@@ -22,6 +22,15 @@ app.use(
   })
 );
 
+mongoose.connect(process.env.MONGO_URI,{
+  serverSelectionTimeoutMS: 100000000
+}).then(() =>
+{ 
+  console.log("DB Connected")
+
+
+
+
 app.use(
   session({
     secret: "some random secret",
@@ -34,19 +43,14 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-mongoose.connect(
-  process.env.MONGO_URI,
-  {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  },
-  () => console.log("DB Connected")
-);
 
 app.use("/api/code", require("./routes/code"));
 app.use("/api/problem", require("./routes/problem"));
 app.use("/api/auth", require("./routes/auth"));
 
+app.get("/health",(req,res)=>{
+  res.status(200).send("working fine")
+})
 app.get(
   "/auth/google/callback",
   passport.authenticate("google", {
@@ -120,3 +124,4 @@ async function getAllRecords() {
     console.error("Error retrieving records:", error);
   }
 }
+})
