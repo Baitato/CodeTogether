@@ -38,7 +38,7 @@ router.post("/run", async (req, res) => {
 
 router.post("/submit", verify, async (req, res) => {
   let { language = "cpp", code, userInput, problemId, userId } = req.body;
-
+  console.log("submit endpoint")
   if (code === undefined || !code) {
     return res.status(400).json({ success: false, error: "Empty code body!" });
   }
@@ -46,10 +46,11 @@ router.post("/submit", verify, async (req, res) => {
   let job;
   try {
     // need to generate a c++ file with content from the request
-    const filepath = await generateFile(language, code);
-
-    job = await Job({ language, filepath, userInput }).save();
+    job = await Job({ language }).save();
     const jobId = job["_id"];
+    
+    generateFiles(language, code, "", jobId)
+
     addSubmitToQueue(jobId, problemId, userId);
 
     res.status(201).json({ sueccess: true, jobId });

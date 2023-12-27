@@ -63,15 +63,16 @@ const addJobToQueue = async (jobId) => {
 // For submitting code and check testcase
 
 const submitQueue = new Queue("job-submit-queue", {
-  redis: { host: "redis", port: 6380 },
+  redis: { host: "127.0.0.1", port: 6380 },
 });
 
 submitQueue.process(async ({ data }) => {
+  console.log("Inside Submit Queue")
   const jobId = data.id;
   const problemId = data.problemId;
   const job = await Job.findById(jobId);
   const problem = await Problem.findById(problemId);
-
+  
   if (job === undefined || problem === undefined) {
     throw Error(`Invalid job/problem id`);
   }
@@ -89,10 +90,16 @@ submitQueue.process(async ({ data }) => {
 
     writeTestCasetoInputFile(jobId, testcases[i].input)
 
+    console.log(testcases[i].input)
+
+
     const result = dockerExec(jobId, job.language);
     
     const outputActual = result.output
+    const outputExpected = testcases[i].output
 
+    console.log(outputActual)
+    console.log(outputExpected)
     if (result.status !== "success" || outputActual !== outputExpected) {
       if(result.status == "success")
       {
@@ -115,9 +122,9 @@ submitQueue.process(async ({ data }) => {
       break;
     }
   }
-
+  
   passed && (job["verdict"] = "Accepted");
-
+  
   if (passed) {
     const distinct_user = new Set(problem.whoSolved);
     distinct_user.add(data.userId);
@@ -125,6 +132,8 @@ submitQueue.process(async ({ data }) => {
     await problem.save();
   }
 
+  console.log("Submit Queue Job Finished")
+  
   job["completedAt"] = new Date();
   job["status"] = "success";
   job["output"] = output;
