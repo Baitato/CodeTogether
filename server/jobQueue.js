@@ -7,9 +7,14 @@ const Problem = require("./models/Problem");
 const dirAllCodes = path.join(__dirname, "codes");
 const fs = require("fs")
 
-function writeTestCasetoInputFile(jobId, text)
+function getPathToJobDir(jobId)
 {
   const filePath = path.join(dirAllCodes,jobId,"input.txt")
+  return filePath
+}
+function writeTestCasetoInputFile(jobId, text)
+{
+  const filePath = getPathToJobDir(jobId)
   fs.writeFileSync(filePath,text)
 }
 
@@ -53,7 +58,7 @@ jobQueue.on("failed", (error) => {
 });
 
 const addJobToQueue = async (jobId) => {
-  console.log("Adding to queue")
+  console.log("Adding to queue " + jobId)
   
   jobQueue.add({  
     id: jobId,
@@ -86,6 +91,7 @@ submitQueue.process(async ({ data }) => {
 
   let passed = true;
 
+  let status = "success"
   for (let i = 0; i < testcases.length; i++) {
 
     writeTestCasetoInputFile(jobId, testcases[i].input)
@@ -101,24 +107,30 @@ submitQueue.process(async ({ data }) => {
     console.log(outputActual)
     console.log(outputExpected)
     if (result.status !== "success" || outputActual !== outputExpected) {
+  
       if(result.status == "success")
       {
-        job.verdict = `WA for testcase ${i + 1}`;
+        job.verdict = `WA for testcase ${i + 1}`; 
       }
-      if (result.status === "Timeout")
+      else if (result.status == "error")
       {
         job.verdict = `Time limit exceeded in testcase ${i + 1}`;
+
+        const compileStatusFilePath = path.join(getPathToJobDir(jobId),"compile_status.txt")
+        const compileError = fs.readFileSync(compileStatusFilePath)
+        // const runtimeErrorFilePath = path.join(getPathToJobDir(jobId),"run_status.txt")
+        // const runtimeError = fs.readFileSync(runtimeErrorFilePath)
+        if(compileError.length == 0)
+        {
+          job.verdict = "Compilation Error";
+        }
+        else
+        {
+          job.verdict = "Runtime Error";
+        }
       }
-      else if(result.status =="compileTimeError")
-      {
-        job.verdict = `Compilation Error`;
-        passed = false;
-      }
-      else if(result.status =="runtimeError")
-      {
-        job.verdict = `Runtime error for testcase ${i + 1}`;
-        passed = false;
-      }
+      status == "error"
+      passed = false
       break;
     }
   }
@@ -135,10 +147,12 @@ submitQueue.process(async ({ data }) => {
   console.log("Submit Queue Job Finished")
   
   job["completedAt"] = new Date();
-  job["status"] = "success";
-  job["output"] = output;
+  job["status"] = status;
+  if(!passed)
+  {
+    job["output"] = output;
+  }
   await job.save();
-
 });
 
 submitQueue.on("failed", (error) => {

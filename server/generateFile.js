@@ -17,7 +17,7 @@ const generateFiles = async (format, content, input, jobId) => {
   
   const codePath = path.join(dirJobIdPath, filename);
   const outputPath = path.join(dirJobIdPath, "output.txt");
-  const runtimePath = path.join(dirJobIdPath, "runtime_status.txt");
+  const runtimePath = path.join(dirJobIdPath, "run_status.txt");
   const compileStatusPath = path.join(dirJobIdPath, "compile_status.txt");
   const inputPath = path.join(dirJobIdPath, "input.txt");
 

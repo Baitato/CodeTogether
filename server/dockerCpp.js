@@ -23,18 +23,35 @@ const dockerExec = (jobId, language) => {
   console.log("Docker Command running now " + jobPath)
   if(language == "cpp" || language == "c")
   {
-    execSync(`docker run --rm -v "${jobPath}:/usr/src/app" --cpus="1" --memory="100m" cppexec`) 
+    try{  
+      execSync(`docker run --rm -v "${jobPath}:/usr/src/app" --cpus="1" --memory="100m" cppexec`) 
+    }catch(err)
+    {
+
+    }
   }else if(language == "java")
   {
+    try{  
     execSync(`docker run --rm -v "${jobPath}:/usr/src/app" --cpus="1" --memory="100m" javaexec`) 
+    }
+    catch(err)
+    {
+
+    }
   }
   else if(language == "py")
   {
-    execSync(`docker run --rm -v "${jobPath}:/usr/src/app" --cpus="1" --memory="100m" pyexec`) 
+    try{
+      execSync(`docker run --rm -v "${jobPath}:/usr/src/app" --cpus="1" --memory="100m" pyexec`) 
+    }
+    catch(err)
+    {
+    }
   }
 
+  console.log("Docker executed")
 
-  const runTimeError = fs.readFileSync(path.join(jobPath,"runtime_status.txt"), "utf8");
+  const runTimeError = fs.readFileSync(path.join(jobPath,"run_status.txt"), "utf8");
   const compileTimeError = fs.readFileSync(path.join(jobPath,"compile_status.txt"), "utf8");
   const codeOutput = fs.readFileSync(path.join(jobPath,"output.txt"), "utf8");
 
@@ -46,17 +63,17 @@ const dockerExec = (jobId, language) => {
   if(compileTimeError !== "")
   {
     output = compileTimeError
-    status = "compileTimeError"
+    status = "error"
   }
   else if(runTimeError == "Timeout")
   {
     output = runTimeError
-    status = "tle"
+    status = "error"
   }
   else if(runTimeError != "")
   {
-    status = "runtimeError"
     output = runTimeError
+    status = "error"
   } else {
     output = codeOutput
   }

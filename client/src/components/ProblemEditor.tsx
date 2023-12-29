@@ -130,13 +130,9 @@ export default function ProblemEditor() {
             ) : bottomDrawer === "result" ? (
               <div
                 className={`bg-white flex-grow w-full border ${
-                  verdict === "ac"
+                  verdict === "Accepted"
                     ? "border-green-600"
-                    : verdict === "wa"
-                    ? "border-red-600"
-                    : verdict === "tle"
-                    ? "border-red-800"
-                    : "border-slate-700"
+                    : "border-red-700"
                 } outline-none p-2 text-xl grid place-items-center font-bold rounded-sm shadow`}
               >
                 <span className={(verdict === "Accepted" ? "text-green-500" : "text-red-500")}>{verdict}</span>

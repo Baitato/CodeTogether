@@ -11,7 +11,8 @@ const { v4: uuid } = require("uuid");
 
 router.post("/run", async (req, res) => {
   let { language = "cpp", code, userInput } = req.body;
-
+  if(userInput === undefined || !userInput)
+    userInput = ""
   if (code === undefined || !code) {
     return res.status(400).json({ success: false, error: "Empty code body!" });
   }
