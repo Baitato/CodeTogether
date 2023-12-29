@@ -9,4 +9,4 @@ RUN apt-get update \
 WORKDIR /usr/src/app
 
 # Specify the default command to run when the container starts (optional)
-CMD ["sh", "-c", "g++ Main.cpp 2> compile_status.txt -o a.out && (timeout 5s ./a.out < input.txt > output.txt 2> run_status.txt || echo 'Timeout' > run_status.txt)"]
+CMD ["sh", "-c", "g++ Main.cpp 2> compile_status.txt -o a.out && (timeout 5s ./a.out < input.txt > output.txt 2> run_status.txt || (test -s run_status.txt || echo 'Timeout' > run_status.txt) )"]

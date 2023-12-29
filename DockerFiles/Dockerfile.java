@@ -12,4 +12,4 @@ WORKDIR /usr/src/app
 COPY Main.java /usr/src/app/Main.java
 
 # Specify the default command to run when the container starts (optional)
-CMD ["sh", "-c", "javac Main.java 2> compile_status.txt && (timeout 5s java Main < input.txt > output.txt 2> run_status.txt || echo 'Timeout' > run_status.txt)"]
+CMD ["sh", "-c", "javac Main.java 2> compile_status.txt && (timeout 5s java Main < input.txt > output.txt 2> run_status.txt || (test -s run_status.txt || echo 'Timeout' > run_status.txt) )"]
