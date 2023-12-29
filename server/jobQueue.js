@@ -9,12 +9,12 @@ const fs = require("fs")
 
 function getPathToJobDir(jobId)
 {
-  const filePath = path.join(dirAllCodes,jobId,"input.txt")
+  const filePath = path.join(dirAllCodes, jobId)
   return filePath
 }
 function writeTestCasetoInputFile(jobId, text)
 {
-  const filePath = getPathToJobDir(jobId)
+  const filePath = path.join(dirAllCodes,jobId,"input.txt")
   fs.writeFileSync(filePath,text)
 }
 
@@ -50,7 +50,7 @@ jobQueue.process(async function ({data}, done) {
 
   await job.save();
 
-  return true;
+  done()
 });
 
 jobQueue.on("failed", (error) => {
@@ -60,9 +60,12 @@ jobQueue.on("failed", (error) => {
 const addJobToQueue = async (jobId) => {
   console.log("Adding to queue " + jobId)
   
-  jobQueue.add({  
-    id: jobId,
+  await jobQueue.add({  
+    id: jobId
+  },{
+    jobId: Date.now()
   });
+
 };
 
 // For submitting code and check testcase
@@ -71,7 +74,7 @@ const submitQueue = new Queue("job-submit-queue", {
   redis: { host: "127.0.0.1", port: 6380 },
 });
 
-submitQueue.process(async ({ data }) => {
+submitQueue.process(async ({ data },done) => {
   console.log("Inside Submit Queue")
   const jobId = data.id;
   const problemId = data.problemId;
@@ -120,7 +123,7 @@ submitQueue.process(async ({ data }) => {
         const compileError = fs.readFileSync(compileStatusFilePath)
         // const runtimeErrorFilePath = path.join(getPathToJobDir(jobId),"run_status.txt")
         // const runtimeError = fs.readFileSync(runtimeErrorFilePath)
-        if(compileError.length == 0)
+        if(compileError.length != 0)
         {
           job.verdict = "Compilation Error";
         }
@@ -129,7 +132,8 @@ submitQueue.process(async ({ data }) => {
           job.verdict = "Runtime Error";
         }
       }
-      status == "error"
+      output = result.output
+      status = "error"
       passed = false
       break;
     }
@@ -153,6 +157,7 @@ submitQueue.process(async ({ data }) => {
     job["output"] = output;
   }
   await job.save();
+  done()
 });
 
 submitQueue.on("failed", (error) => {
@@ -164,6 +169,8 @@ const addSubmitToQueue = async (jobId, problemId, userId) => {
     id: jobId,
     problemId,
     userId,
+  },{
+    jobId: Date.now()
   });
 };
 

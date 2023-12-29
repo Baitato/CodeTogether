@@ -47,7 +47,6 @@ export default function ProblemEditor() {
         if (data.job.verdict) {
           setBottomDrawer("result");
           setVerdict(data.job.verdict);
-          setOutput("");
         }
       }
     }
@@ -106,7 +105,6 @@ export default function ProblemEditor() {
               className={`${
                 bottomDrawer === "output" && "bg-white shadow"
               } p-2 px-4 rounded-md`}
-              disabled={!output}
               onClick={() => setBottomDrawer("output")}
             >
               Output
